@@ -6,6 +6,76 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+# Load the googlesheets4 package
+library(googlesheets4)
+library(visdat)
+library(dplyr)
+library(readxl)
+library(tidyr)
 
+
+# Authenticate your Google account
+#gs4_deauth()  # This will open a browser window for authentication
+
+# Import the Google Sheet using its URL
+sheet_url <- "https://docs.google.com/spreadsheets/d/1G253eAm-L0MxusOROXIunYnmTzXSnCiAZso9wBqHudA/edit#gid=1680973503"
+df <- read_sheet(sheet_url)
 ```
+
+```{r}
+vis_dat(df)
+skimr::skim(df)
+```
+
+```{r}
+Inventaire <- df
+# Identification e la famille quand le genre est inconnu :
+
+Inventaire$Taxo = Inventaire$Genre_espece #On duplique la colonne qui porte le nom des especes
+Inventaire[Inventaire$Genre_espece == "_","Taxo"]<- Inventaire[Inventaire$Genre_espece == "_","Famille"] #On remplace tous les vides par les noms de famille
+```
+
+```{r}
+Div <- Inventaire %>%
+  filter(Station!="") %>% 
+  group_by (Station,`Type de milieu`,`Groupe taxonomique` ) %>% 
+  summarise("Diversite" = length(unique(Taxo))) %>%
+  pivot_wider( names_from = "Groupe taxonomique",values_from = "Diversite") %>%
+  replace(is.na(.), 0)
+```
+
+```{r}
+# Presence absence, pour tous les groupes
+Communaute <-Inventaire%>%filter(Station!="")  %>%
+  group_by (Station,`Type de milieu`, Taxo) %>% 
+  summarise("Presence" = 1) %>% 
+  pivot_wider( names_from = "Taxo",values_from = "Presence")%>% replace(is.na(.), 0)
+```
+
+```{r}
+# Indices de diversite
+
+Index <- Div[,1:2]
+library(vegan)
+SR <- rowSums(Communaute[,-c(1,2)])
+shannon <- diversity(Communaute[,-c(1,2)], index = "shannon")
+simpson <- diversity(Communaute[,-c(1,2)], index = "simpson")
+Index <- cbind(Index,"SR"=SR,"shannon" =shannon,"simpson" =simpson)
+```
+
+```{r}
+# CA 
+library(vegan)
+res.ca = cca(Div[,-c(1,2)])
+summary(res.ca)
+screeplot(res.ca, bstick = TRUE)
+plot(res.ca, scaling =1) 
+plot(res.ca, scaling =2)
+```
+
+
+
+
+
+
 
