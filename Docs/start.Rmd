@@ -15,7 +15,7 @@ library(tidyr)
 
 
 # Authenticate your Google account
-#gs4_deauth()  # This will open a browser window for authentication
+gs4_deauth()  # This will open a browser window for authentication
 
 # Import the Google Sheet using its URL
 sheet_url <- "https://docs.google.com/spreadsheets/d/1G253eAm-L0MxusOROXIunYnmTzXSnCiAZso9wBqHudA/edit#gid=1680973503"
